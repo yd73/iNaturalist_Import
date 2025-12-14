@@ -1,0 +1,10 @@
+[general]
+name=iNaturalist Import
+description=Import de données iNaturalist + Ajout facultatif de la taxonomie.
+version=1.0.0
+qgisMinimumVersion=3.28
+author=Yves Durivault
+email=yves.durivault@gmail.com
+license=GPL-3.0
+about=Import de données iNaturalist + Ajout facultatif de la taxonomie.
+icon=icons/yd_icon_plugin.png

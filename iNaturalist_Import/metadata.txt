@@ -8,3 +8,6 @@ email=yves.durivault@gmail.com
 license=GPL-3.0
 about=Import de données iNaturalist + Ajout facultatif de la taxonomie.
 icon=icons/yd_icon_plugin.png
+homepage=https://github.com/yd73/iNaturalist_Import
+repository=https://github.com/yd73/iNaturalist_Import
+tracker=https://github.com/yd73/iNaturalist_Import/issues

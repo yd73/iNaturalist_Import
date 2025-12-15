@@ -12,7 +12,7 @@ from qgis.PyQt.QtCore import QVariant, Qt
 from qgis.PyQt.QtWidgets import QProgressDialog, QMessageBox, QApplication
 from qgis.utils import iface
 
-from pyinaturalist.node_api import get_taxa
+#from pyinaturalist.node_api import get_taxa
 
 import csv
 import os
@@ -122,6 +122,35 @@ def etape9_all_in_one_reload():
     # ==============================================================
      
     start_time = datetime.now()
+    
+    # ==============================================================
+    # === CONTROLE DEPENDANCE pyinaturalist ========================
+    # ==============================================================
+
+    try:
+        from pyinaturalist.node_api import get_taxa
+    except ImportError:
+        QMessageBox.critical(
+            iface.mainWindow(),
+            "iNaturalist Taxonomy - ATTENTION ! Missing dependency",             
+            "This tool requires the Python module 'pyinaturalist'.\n"
+            "To install it for QGIS:\n\n"
+            "1. Close QGIS.\n"
+            "2. Open the 'OSGeo4W Shell' or the 'QGIS Python Console'.\n"
+            "3. Run the following command:\n"
+            "   python -m pip install pyinaturalist\n"
+            "4. Restart QGIS.\n\n"
+            "------------------------------------------------------------\n"
+            "Cet outil nécessite le module Python 'pyinaturalist'.\n"
+            "Pour l’installer dans QGIS :\n\n"
+            "1. Fermez QGIS.\n"
+            "2. Ouvrez le « OSGeo4W Shell » ou la « Console Python de QGIS ».\n"
+            "3. Lancez la commande suivante :\n"
+            "   python -m pip install pyinaturalist\n"
+            "4. Redémarrez QGIS.\n"
+        )
+        return
+    
     
     src = active.source()
     parts = src.split("|layername=")

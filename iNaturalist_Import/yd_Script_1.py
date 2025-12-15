@@ -16,57 +16,30 @@
 #*** Entry point for plugin: yd_run(iface)
 # ==============================================================
 
+from qgis.PyQt import QtWidgets
+
 _yd_iface = None
 
 def yd_run(iface):
     """Plugin entry point"""
-    global _yd_iface
-    _yd_iface = iface
-    globals()['iface'] = iface  #*** inject iface for original script
-    run_original_script()
+    run_original_script(iface)
 
 # ==============================================================
 #*** ORIGINAL SCRIPT — UNCHANGED (ENCAPSULATED)
 # ==============================================================
 
-def run_original_script():
-    #*** GLOBAL SHARED VARIABLES (plugin encapsulation fix)
-    global circle_result  #***
-    global layer          #***
-    global proj           #***
-    global canvas         #***
-    #*** END globals
+def run_original_script(iface):
+ 
+    # ==============================================================
+    # === CONTROLE DEPENDANCE pyinaturalist ========================
+    # ==============================================================
 
-    import os
-    import importlib.util
-    
-    from pyinaturalist.node_api import get_observations
-    
-    from qgis.core import (
-        QgsProject, QgsWkbTypes, QgsFeature, QgsGeometry, QgsPointXY,
-        QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsDistanceArea,
-        QgsVectorLayer, QgsVectorFileWriter,
-        QgsFillSymbol, QgsMarkerSymbol, QgsSingleSymbolRenderer,
-        QgsGeometryGeneratorSymbolLayer, QgsFields, QgsField, Qgis
-    )
-    from qgis.gui import QgsMapTool, QgsRubberBand
-    from qgis.utils import iface
-    from qgis.PyQt.QtCore import Qt, QVariant, QDateTime
-    from qgis.PyQt.QtWidgets import (
-        QDialog, QVBoxLayout, QLabel, QLineEdit, QComboBox,
-        QDialogButtonBox, QRadioButton, QCheckBox, QInputDialog, QMessageBox
-    )
-    
-    # ==============================================================
-    # 1) CONTRÔLE PRÉALABLE : pyinaturalist présent ?
-    # ==============================================================
-    
-    def check_pyinaturalist_or_quit():
-        spec = importlib.util.find_spec("pyinaturalist")
-        if spec is not None:
-            return True
-    
-        text = (
+    try:
+        from pyinaturalist.node_api import get_observations
+    except ImportError:
+        QtWidgets.QMessageBox.critical(
+            iface.mainWindow(),
+            "iNaturalist Importation - ATTENTION ! Missing dependency",             
             "This tool requires the Python module 'pyinaturalist'.\n"
             "To install it for QGIS:\n\n"
             "1. Close QGIS.\n"
@@ -83,17 +56,37 @@ def run_original_script():
             "   python -m pip install pyinaturalist\n"
             "4. Redémarrez QGIS.\n"
         )
+        return
+
     
-        QMessageBox.information(
-            iface.mainWindow(),
-            "iNaturalist Import - ATTENTION !",
-            text
-        )
-        return False
+    #*** GLOBAL SHARED VARIABLES (plugin encapsulation fix)
+    global circle_result  #***
+    global layer          #***
+    global proj           #***
+    global canvas         #***
+    #*** END globals
+
+    import os
+    import importlib.util
     
-    if not check_pyinaturalist_or_quit():
-        raise SystemExit("pyinaturalist not installed")
+    #from pyinaturalist.node_api import get_observations
     
+    from qgis.core import (
+        QgsProject, QgsWkbTypes, QgsFeature, QgsGeometry, QgsPointXY,
+        QgsCoordinateReferenceSystem, QgsCoordinateTransform, QgsDistanceArea,
+        QgsVectorLayer, QgsVectorFileWriter,
+        QgsFillSymbol, QgsMarkerSymbol, QgsSingleSymbolRenderer,
+        QgsGeometryGeneratorSymbolLayer, QgsFields, QgsField, Qgis
+    )
+    from qgis.gui import QgsMapTool, QgsRubberBand
+    from qgis.utils import iface
+    from qgis.PyQt.QtCore import Qt, QVariant, QDateTime
+    from qgis.PyQt.QtWidgets import (
+        QDialog, QVBoxLayout, QLabel, QLineEdit, QComboBox,
+        QDialogButtonBox, QRadioButton, QCheckBox, QInputDialog, QMessageBox
+    )
+    
+   
     # ==============================================================
     # 2) MÉMORISATION SCR INITIAL + PROJET ENREGISTRÉ
     # ==============================================================

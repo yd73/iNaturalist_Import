@@ -1,0 +1,16 @@
+[general]
+name=iNaturalist Import
+description=Import iNaturalist observations with spatial filters and taxonomy enrichment. Two-table architecture for proper photo handling (EN) / Import d'observations iNaturalist avec filtres spatiaux et enrichissement taxonomique. Architecture deux tables pour gestion optimale des photos (FR)
+version=2.0.0
+qgisMinimumVersion=3.40
+author=Yves Durivault
+email=yves.durivault@gmail.com
+license=GPL-3.0
+about=Plugin for importing iNaturalist biodiversity observations into QGIS. Allows circular area selection, filtering by date/user/taxon/quality, and automatic taxonomy enrichment using a local database. Bilingual interface (EN/FR). / Plugin pour importer des observations de biodiversité iNaturalist dans QGIS. Permet la sélection de zone circulaire, le filtrage par date/utilisateur/taxon/qualité, et l'enrichissement taxonomique automatique via une base de données locale. Interface bilingue (EN/FR).
+icon=icons/yd_icon_plugin.png
+homepage=https://github.com/yd73/iNaturalist_Import
+repository=https://github.com/yd73/iNaturalist_Import
+tracker=https://github.com/yd73/iNaturalist_Import/issues
+changelog=https://github.com/yd73/iNaturalist_Import/blob/main/CHANGELOG.md
+tags=biodiversity,iNaturalist,ecology,taxonomy,observations,species,import
+category=Plugins

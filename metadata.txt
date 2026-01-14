@@ -1,7 +1,7 @@
 [general]
 name=iNaturalist Import
 description=Import iNaturalist observations with spatial filters and taxonomy enrichment. Two-table architecture for proper photo handling (EN) / Import d'observations iNaturalist avec filtres spatiaux et enrichissement taxonomique. Architecture deux tables pour gestion optimale des photos (FR)
-version=2.0.0
+version=2.1.0
 qgisMinimumVersion=3.40
 author=Yves Durivault
 email=yves.durivault@gmail.com

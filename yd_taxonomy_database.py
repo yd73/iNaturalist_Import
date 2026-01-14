@@ -12,6 +12,8 @@ Architecture :
 - inat_taxonomy_active.db : BDD en cours d'utilisation
 - inat_taxonomy_backup.db : Backup de l'ancienne version
 - metadata.json : Métadonnées des versions
+
+Compatible avec plugin v2.0.0 et 2.1.0
 """
 
 import sqlite3

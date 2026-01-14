@@ -6,6 +6,8 @@ Dialog PyQt5 pour :
 - Télécharger/Mettre à jour la BDD
 - Voir les changements entre versions
 - Gérer les paramètres
+
+Compatible avec plugin v2.0.0 et 2.1.0
 """
 
 from pathlib import Path

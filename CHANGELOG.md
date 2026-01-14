@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.1.0] - 2026-01-14
+### Added
+- Universal geodesic circle support (works worldwide, not just France)
+- Compatibility with iNaturalist circle methodology
+
+### Changed  
+- Circle geometry now uses WGS84 (EPSG:4326) instead of Lambert-93 (EPSG:2154)
+- Geodesic distance calculation for accurate radius worldwide
+- Real-time geodesic preview during circle drawing
+- Removed forced project CRS change to EPSG:2154
+
+### Removed
+- EPSG:2154 coordinate fields from circle attributes
+
+
 ## [2.0.0] - 2026-01-11
 
 ### Added

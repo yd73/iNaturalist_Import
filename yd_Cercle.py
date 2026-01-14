@@ -1,8 +1,10 @@
 # ==============================================================
-# Plugin QGIS : iNaturalist Import
+# Plugin QGIS : iNaturalist Import v2.1.0
 # Script     : yd_Cercle.py (sous-programme de yd_Script_1.py)
-# Rôle       : Dessin interactif d’un cercle dans une couche vectorielle
+# Rôle       : Dessin interactif d'un cercle géodésique dans une couche vectorielle
 #              et restitution des paramètres (centre, rayon, nom de couche)
+# Méthode    : Cercle géodésique universel (compatible iNaturalist)
+#              via SCR azimutal équidistant centré sur le point
 # QGIS       : 3.40 (Bratislava)
 # ==============================================================
 
@@ -32,6 +34,7 @@ from qgis.core import (
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransform,
     QgsVectorFileWriter,
+    QgsDistanceArea,
 )
 
 
@@ -50,28 +53,22 @@ class YD_Cercle(QgsMapTool):
         self.iface = iface
         self.canvas = iface.mapCanvas()
 
-        # --- FORÇAGE SCU PROJET EN EPSG:2154 ---
-        project = QgsProject.instance()
-        crs_2154 = QgsCoordinateReferenceSystem("EPSG:2154")
-
-        if project.crs() != crs_2154:
-            project.setCrs(crs_2154)
-
-        self.canvas.setDestinationCrs(crs_2154)
-        self.canvas.refresh()
-        # -------------------------------------
-
         super().__init__(self.canvas)
 
         self.center = None
+        self.center_wgs84 = None  # Centre en coordonnées WGS84 (pour le SCR azimutal)
         self.rubber_band = None
         self.radius = None
 
         # Nom de la couche cercle (nouvelle donnée contractuelle)
         self.layer_name = None
+        
+        # Outil de calcul de distance géodésique
+        self.distance_calc = QgsDistanceArea()
+        self.distance_calc.setEllipsoid('WGS84')
 
     # ------------------------------------------------------------------
-    # Initialisation de l’outil de dessin
+    # Initialisation de l'outil de dessin
     # ------------------------------------------------------------------
 
     def run(self):
@@ -117,6 +114,16 @@ Cliquez sur OK pour quitter, enregistrez votre projet, puis relancez le programm
         # Premier clic : définition du centre
         if self.center is None:
             self.center = point
+            
+            # Conversion immédiate du centre en WGS84 pour le SCR azimutal
+            canvas_crs = self.canvas.mapSettings().destinationCrs()
+            wgs84_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+            transform = QgsCoordinateTransform(
+                canvas_crs,
+                wgs84_crs,
+                QgsProject.instance()
+            )
+            self.center_wgs84 = transform.transform(point)
 
             self.rubber_band = QgsRubberBand(
                 self.canvas,
@@ -130,7 +137,22 @@ Cliquez sur OK pour quitter, enregistrez votre projet, puis relancez le programm
 
         # Second clic : validation du rayon
         else:
-            self.radius = self._distance(self.center, point)
+            # Calcul du rayon GÉODÉSIQUE (distance réelle sur la sphère)
+            # Convertir le point cliqué en WGS84
+            canvas_crs = self.canvas.mapSettings().destinationCrs()
+            wgs84_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+            transform = QgsCoordinateTransform(
+                canvas_crs,
+                wgs84_crs,
+                QgsProject.instance()
+            )
+            point_wgs84 = transform.transform(point)
+            
+            # Calculer la distance géodésique en mètres
+            self.radius = self.distance_calc.measureLine(
+                self.center_wgs84,
+                point_wgs84
+            )
 
             rayon, ok = QInputDialog.getDouble(
                 None,
@@ -146,26 +168,15 @@ Cliquez sur OK pour quitter, enregistrez votre projet, puis relancez le programm
             )
 
             if ok:
-                self._create_layer_and_circle(self.center, rayon)
-
-                # Transformation du centre en EPSG:4326
-                crs_src = QgsCoordinateReferenceSystem("EPSG:2154")
-                crs_dest = QgsCoordinateReferenceSystem("EPSG:4326")
-                transform = QgsCoordinateTransform(
-                    crs_src,
-                    crs_dest,
-                    QgsProject.instance()
-                )
-
-                centre_4326 = transform.transform(self.center)
+                self._create_layer_and_circle(rayon)
 
                 # ÉMISSION DU SIGNAL DE FIN
                 # (incluant explicitement le nom de la couche cercle)
                 self.finished.emit(
-                    centre_4326.y(),   # latitude
-                    centre_4326.x(),   # longitude
-                    rayon,             # rayon (m)
-                    self.layer_name    # NOM DE LA COUCHE CERCLE
+                    self.center_wgs84.y(),   # latitude
+                    self.center_wgs84.x(),   # longitude
+                    rayon,                   # rayon (m)
+                    self.layer_name          # NOM DE LA COUCHE CERCLE
                 )
 
             self._cleanup()
@@ -178,31 +189,58 @@ Cliquez sur OK pour quitter, enregistrez votre projet, puis relancez le programm
             return
 
         point = self.toMapCoordinates(event.pos())
-        radius = self._distance(self.center, point)
-        self._draw_circle(self.center, radius)
+        
+        # Convertir le point en WGS84
+        canvas_crs = self.canvas.mapSettings().destinationCrs()
+        wgs84_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+        transform = QgsCoordinateTransform(
+            canvas_crs,
+            wgs84_crs,
+            QgsProject.instance()
+        )
+        point_wgs84 = transform.transform(point)
+        
+        # Calculer le rayon géodésique
+        radius = self.distance_calc.measureLine(self.center_wgs84, point_wgs84)
+        
+        # Dessiner l'aperçu du cercle géodésique
+        self._draw_circle_preview(radius)
 
     # ------------------------------------------------------------------
-    # Dessin du cercle dynamique
+    # Dessin du cercle géodésique dynamique (aperçu en temps réel)
     # ------------------------------------------------------------------
-    def _draw_circle(self, center, radius, segments=64):
+    def _draw_circle_preview(self, radius_m, segments=32):
+        """Aperçu géodésique du cercle pendant le dessin"""
         self.rubber_band.reset(QgsWkbTypes.PolygonGeometry)
-
-        for i in range(segments + 1):
-            angle = 2 * math.pi * i / segments
-            x = center.x() + radius * math.cos(angle)
-            y = center.y() + radius * math.sin(angle)
-            self.rubber_band.addPoint(QgsPointXY(x, y), False)
-
-        self.rubber_band.closePoints()
+        
+        # Créer un cercle géodésique temporaire
+        geom = self._create_geodesic_circle(
+            self.center_wgs84.x(),
+            self.center_wgs84.y(),
+            radius_m,
+            segments  # Moins de segments pour l'aperçu (plus fluide)
+        )
+        
+        # Reprojeter dans le SCR du canvas pour l'affichage
+        wgs84_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+        canvas_crs = self.canvas.mapSettings().destinationCrs()
+        transform = QgsCoordinateTransform(
+            wgs84_crs,
+            canvas_crs,
+            QgsProject.instance()
+        )
+        geom.transform(transform)
+        
+        # Dessiner le polygone dans le rubber band
+        if geom.type() == QgsWkbTypes.PolygonGeometry:
+            polygon = geom.asPolygon()
+            if polygon:
+                for point in polygon[0]:
+                    self.rubber_band.addPoint(point, False)
+                self.rubber_band.closePoints()
 
     # ------------------------------------------------------------------
-    # Calcul de distance cartésienne
-    # ------------------------------------------------------------------
-    def _distance(self, p1, p2):
-        return math.hypot(p1.x() - p2.x(), p1.y() - p2.y())
-
-    # ------------------------------------------------------------------
-    # Nettoyage de l’outil
+    # Nettoyage de l'outil
     # ------------------------------------------------------------------
     def _cleanup(self):
         if self.rubber_band:
@@ -210,12 +248,66 @@ Cliquez sur OK pour quitter, enregistrez votre projet, puis relancez le programm
             self.rubber_band = None
 
         self.center = None
+        self.center_wgs84 = None
         self.canvas.unsetMapTool(self)
+
+    # ------------------------------------------------------------------
+    # Création d'un cercle géodésique via SCR azimutal équidistant
+    # ------------------------------------------------------------------
+    def _create_geodesic_circle(self, center_lon, center_lat, radius_m, segments=64):
+        """
+        Crée un cercle géodésique exact (compatible iNaturalist)
+        en utilisant un SCR azimutal équidistant centré sur le point.
+        
+        Args:
+            center_lon: longitude du centre (EPSG:4326)
+            center_lat: latitude du centre (EPSG:4326)
+            radius_m: rayon en mètres
+            segments: nombre de segments pour le polygone
+            
+        Returns:
+            QgsGeometry: géométrie du cercle en EPSG:4326
+        """
+        # Créer un SCR azimutal équidistant centré sur le point
+        proj_string = (
+            f'+proj=aeqd +lat_0={center_lat} +lon_0={center_lon} '
+            f'+x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs'
+        )
+        aeqd_crs = QgsCoordinateReferenceSystem()
+        aeqd_crs.createFromProj(proj_string)
+        
+        if not aeqd_crs.isValid():
+            raise Exception("Erreur : SCR azimutal équidistant invalide")
+        
+        # Créer le point centre en WGS84
+        wgs84_crs = QgsCoordinateReferenceSystem('EPSG:4326')
+        center_point = QgsPointXY(center_lon, center_lat)
+        
+        # Transformer vers le SCR azimutal
+        transform_to_aeqd = QgsCoordinateTransform(
+            wgs84_crs,
+            aeqd_crs,
+            QgsProject.instance()
+        )
+        center_aeqd = transform_to_aeqd.transform(center_point)
+        
+        # Créer le cercle (buffer) dans le SCR azimutal
+        circle_geom = QgsGeometry.fromPointXY(center_aeqd).buffer(radius_m, segments)
+        
+        # Retransformer vers WGS84
+        transform_to_wgs84 = QgsCoordinateTransform(
+            aeqd_crs,
+            wgs84_crs,
+            QgsProject.instance()
+        )
+        circle_geom.transform(transform_to_wgs84)
+        
+        return circle_geom
 
     # ------------------------------------------------------------------
     # Création de la couche cercle + persistance GPKG
     # ------------------------------------------------------------------
-    def _create_layer_and_circle(self, center, rayon):
+    def _create_layer_and_circle(self, rayon):
 
         project = QgsProject.instance()
         project_file = project.fileName()
@@ -241,9 +333,9 @@ Cliquez sur OK pour quitter, enregistrez votre projet, puis relancez le programm
         # mémorisation du nom de couche (NOUVEAU, ESSENTIEL)
         self.layer_name = layer_name
 
-        # Création couche mémoire
+        # Création couche mémoire en WGS84
         layer = QgsVectorLayer(
-            "Polygon?crs=EPSG:2154",
+            "Polygon?crs=EPSG:4326",
             layer_name,
             "memory"
         )
@@ -257,44 +349,28 @@ Cliquez sur OK pour quitter, enregistrez votre projet, puis relancez le programm
         
         provider = layer.dataProvider()
 
-        # Géométrie
-        points = []
-        for i in range(64):
-            angle = 2 * math.pi * i / 64
-            x = center.x() + rayon * math.cos(angle)
-            y = center.y() + rayon * math.sin(angle)
-            points.append(QgsPointXY(x, y))
-        points.append(points[0])
+        # Création du cercle géodésique
+        geom = self._create_geodesic_circle(
+            self.center_wgs84.x(),
+            self.center_wgs84.y(),
+            rayon
+        )
 
-        geom = QgsGeometry.fromPolygonXY([points])
-
+        # Définition des champs attributaires
         provider.addAttributes([
-            QgsField("x_centre_(EPSG:2154)", QVariant.Double),
-            QgsField("y_centre_(EPSG:2154)", QVariant.Double),
-            QgsField("Rayon_(m)", QVariant.Double),
             QgsField("latitude_centre_(EPSG:4326)", QVariant.Double),
             QgsField("longitude_centre_(EPSG:4326)", QVariant.Double),
+            QgsField("Rayon_(m)", QVariant.Double),
         ])
         layer.updateFields()
 
         feature = QgsFeature(layer.fields())
         feature.setGeometry(geom)
 
-        crs_src = QgsCoordinateReferenceSystem("EPSG:2154")
-        crs_dest = QgsCoordinateReferenceSystem("EPSG:4326")
-        transform = QgsCoordinateTransform(
-            crs_src,
-            crs_dest,
-            QgsProject.instance()
-        )
-        centre_4326 = transform.transform(center)
-
         feature.setAttributes([
-            center.x(),
-            center.y(),
-            rayon,
-            centre_4326.y(),
-            centre_4326.x()
+            self.center_wgs84.y(),
+            self.center_wgs84.x(),
+            rayon
         ])
 
         provider.addFeature(feature)
@@ -309,8 +385,7 @@ Cliquez sur OK pour quitter, enregistrez votre projet, puis relancez le programm
         # Configuration de la couche de symbole principale
         symbol_layer = fill_symbol.symbolLayer(0)
         
-        # Couleur de remplissage : Magenta semi-transparent
-        #fill_color = QColor(255, 0, 255, 60)  # RGBA explicite
+        # Couleur de remplissage : Magenta TOTALEMENT transparent
         fill_color = QColor(255, 0, 255, 0)  # RGBA explicite TOTALEMENT transparent
         symbol_layer.setFillColor(fill_color)
         

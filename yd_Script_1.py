@@ -1,5 +1,5 @@
 # ==============================================================
-# Plugin QGIS : iNaturalist Import
+# Plugin QGIS : iNaturalist Import v2.1.0
 # Script     : yd_Script_1.py (Module 1)
 # Rôle       : Import des observations iNaturalist
 # QGIS       : 3.40 (Bratislava)

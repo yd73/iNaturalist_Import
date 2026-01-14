@@ -1,7 +1,7 @@
 # ==============================================================================
 # PLUGIN QGIS : iNaturalist Import - Script 2 (Taxonomie)
 # ==============================================================================
-# Version    : 2.0.0 - FINALE - Base de données locale mondiale + Cache + API
+# Version    : 2.1.0 - FINALE - Base de données locale mondiale + Cache + API
 # Auteur     : Yves Desnoës
 # Date       : Janvier 2026
 # QGIS       : 3.28+ (Firenze, Bratislava...)

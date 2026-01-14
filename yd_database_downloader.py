@@ -10,6 +10,8 @@ Ce module gère l'ensemble du processus :
 6. Installation et nettoyage
 
 Interface graphique intégrée dans QGIS avec barre de progression.
+
+Compatible avec plugin v2.0.0 et 2.1.0
 """
 
 import sqlite3

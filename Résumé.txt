@@ -1,0 +1,24 @@
+**Data Structure**
+- Two-table architecture: main observations layer + separate photos table
+- One-to-many relationship between observations and photos
+- Multiple photos per observation now properly supported
+- Photo URLs stored in dedicated related table instead of single field
+
+**Taxonomy Database System**
+- Local taxonomy database (1.4 million taxa from iNaturalist)
+- Database Manager interface for installation and updates
+- Significant performance improvement for taxonomy enrichment
+
+**User Interface**
+- Photo viewer for observation images
+- Three date filtering modes: exact date, date range, month-specific
+- Improved input validation
+
+**Other**
+- Bilingual interface (French/English)
+- Context-sensitive help
+
+**Tecnical**
+- QGIS 3.40+ (tested on 3.40 Bratislava)
+- Python 3.12
+- Requires pyinaturalist library

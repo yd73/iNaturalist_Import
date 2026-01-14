@@ -13,7 +13,7 @@ Performance :
 - TTL par défaut : 365 jours (1 an)
 - Auto-cleanup : tous les 7 jours
 
-Compatibilité : v1.0.4 et v2.0.0
+Compatibilité : v2.0.0 et v2.1.0
 """
 
 import sqlite3

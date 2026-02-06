@@ -1,5 +1,5 @@
 # ==============================================================
-# Plugin QGIS : iNaturalist Import v2.1.0
+# Plugin QGIS : iNaturalist Import v2.2.0
 # Script     : yd_Cercle.py (sous-programme de yd_Script_1.py)
 # Rôle       : Dessin interactif d'un cercle géodésique dans une couche vectorielle
 #              et restitution des paramètres (centre, rayon, nom de couche)

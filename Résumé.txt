@@ -11,14 +11,14 @@
 
 **User Interface**
 - Photo viewer for observation images
-- Three date filtering modes: exact date, date range, month-specific
+- Three date filtering modes: exact date, date range, months-specific
 - Improved input validation
 
 **Other**
 - Bilingual interface (French/English)
 - Context-sensitive help
 
-**Tecnical**
+**Technical**
 - QGIS 3.40+ (tested on 3.40 Bratislava)
 - Python 3.12
 - Requires pyinaturalist library

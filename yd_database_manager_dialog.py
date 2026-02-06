@@ -7,7 +7,7 @@ Dialog PyQt5 pour :
 - Voir les changements entre versions
 - Gérer les paramètres
 
-Compatible avec plugin v2.0.0 et 2.1.0
+Compatible avec plugin v2.0.0, 2.1.0 et 2.2.0
 """
 
 from pathlib import Path

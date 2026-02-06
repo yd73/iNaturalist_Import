@@ -1,7 +1,7 @@
 # ==============================================================================
 # PLUGIN QGIS : iNaturalist Import - Script 2 (Taxonomie)
 # ==============================================================================
-# Version    : 2.1.0 - FINALE - Base de données locale mondiale + Cache + API
+# Version    : 2.2.0 - FINALE - Base de données locale mondiale + Cache + API
 # Auteur     : Yves Desnoës
 # Date       : Janvier 2026
 # QGIS       : 3.28+ (Firenze, Bratislava...)
@@ -1538,6 +1538,87 @@ class yd_run:
                 print(f"⚠️ Noeud de couche photos introuvable dans l'arbre")
         else:
             print(f"⚠️ Couche photos '{photos_layer_name}' introuvable dans le projet")
+        
+        # ======================================================================
+        # CONFIGURATION AUTOMATIQUE : JOINTURE + INFOBULLE HTML
+        # ======================================================================
+        
+        if main_layer and photos_layer:
+            print(f"\n{'='*70}")
+            print(f"🔗 Configuration automatique de la jointure et de l'infobulle...")
+            print(f"{'='*70}")
+            
+            # ----------------------------------------------------------------
+            # 1. CONFIGURATION DE LA JOINTURE
+            # ----------------------------------------------------------------
+            from qgis.core import QgsVectorLayerJoinInfo
+            
+            # Vérifier si la jointure existe déjà
+            join_exists = False
+            for join in main_layer.vectorJoins():
+                if join.joinLayerId() == photos_layer.id():
+                    join_exists = True
+                    print(f"ℹ️  La jointure existe déjà entre {layer_name} et {photos_layer_name}")
+                    break
+            
+            if not join_exists:
+                # Créer la jointure
+                join_info = QgsVectorLayerJoinInfo()
+                join_info.setJoinFieldName("inat_id")           # Champ dans la table photos
+                join_info.setTargetFieldName("inat_id")         # Champ dans la couche principale
+                join_info.setJoinLayerId(photos_layer.id())     # ID de la table photos
+                join_info.setUsingMemoryCache(True)             # Utiliser le cache pour performance
+                join_info.setJoinLayer(photos_layer)            # Référence à la couche photos
+                
+                # Préfixe vide pour avoir des noms de champs simples
+                join_info.setPrefix("")
+                
+                # Ajouter la jointure
+                success = main_layer.addJoin(join_info)
+                
+                if success:
+                    print(f"✅ Jointure créée avec succès !")
+                    print(f"   - Couche source : {layer_name}")
+                    print(f"   - Table jointe : {photos_layer_name}")
+                    print(f"   - Champ de jointure : inat_id")
+                else:
+                    print(f"⚠️ Échec de la création de la jointure")
+            
+            # ----------------------------------------------------------------
+            # 2. CONFIGURATION DE L'INFOBULLE HTML
+            # ----------------------------------------------------------------
+            
+            # Code HTML de l'infobulle avec agrégation pour récupérer la première photo
+            # Style CSS avec cadre carré 300x300 et object-fit: contain
+            # Résultat : photos paysage en largeur max, photos portrait en hauteur max
+            maptip_html = f"""<div style="width: 300px; height: 300px; display: flex; align-items: center; justify-content: center; background-color: #f0f0f0;">
+  <img src="[% 
+  aggregate(
+    layer:='{photos_layer_name}',
+    aggregate:='min',
+    expression:="identifier",
+    filter:="inat_id" = attribute(@parent, 'inat_id') AND "photo_rank" = 1
+  )
+%]" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+</div>
+<b>[% "scientific_name" %]</b><br>
+[% "vernacular_name_FR" %]<br>
+👤 [% "observateur_name" %]<br>
+📅 [% "date_obs" %]"""
+            
+            # Appliquer l'infobulle à la couche principale
+            main_layer.setMapTipTemplate(maptip_html)
+            
+            print(f"✅ Infobulle HTML configurée !")
+            print(f"   💡 Activez 'Vue → Afficher les infobulles cartographiques'")
+            print(f"   💡 Survolez une observation pour voir la photo !")
+            
+            print(f"{'='*70}\n")
+        else:
+            if not main_layer:
+                print(f"⚠️ Impossible de configurer : couche principale introuvable")
+            if not photos_layer:
+                print(f"⚠️ Impossible de configurer : table photos introuvable")
         
         dialog.exec_()
     

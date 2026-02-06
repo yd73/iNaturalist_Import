@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [2.2.0] - 2026-01-19
+
+### Added
+- Automatic join configuration between observations layer and photos table
+- Automatic map tip (tooltip) configuration for photo preview on hover
+- Photos now display automatically when hovering over observations (after activating `View → Show Map Tips`)
+
+### Technical
+- `QgsVectorLayerJoinInfo` auto-configuration at end of Script 2
+- Map tip template with aggregate expression for first photo retrieval
+- No manual configuration required by user
+
+
 ## [2.1.0] - 2026-01-14
 ### Added
 - Universal geodesic circle support (works worldwide, not just France)

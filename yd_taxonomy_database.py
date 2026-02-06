@@ -13,7 +13,7 @@ Architecture :
 - inat_taxonomy_backup.db : Backup de l'ancienne version
 - metadata.json : Métadonnées des versions
 
-Compatible avec plugin v2.0.0 et 2.1.0
+Compatible avec plugin v2.0.0, 2.1.0 et 2.2.0
 """
 
 import sqlite3

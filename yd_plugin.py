@@ -1,7 +1,7 @@
 # ==============================================================
 # Plugin QGIS : iNaturalist Import
 # Fichier : yd_plugin.py
-# Version : 2.1.0
+# Version : 2.2.0
 # QGIS    : 3.28+ (Firenze, Bratislava)
 # Python  : 3.12
 # ==============================================================
